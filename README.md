@@ -6,7 +6,7 @@ Real-time used car market insights powered by Trade Me Motors.
 
 ## Screenshots
 
-<!-- Add screenshots here -->
+![Main Interface](./screenshots/main.png)
 
 ## Features
 
