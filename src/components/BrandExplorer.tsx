@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts'
 import { ChevronRight, TrendingUp, TrendingDown } from 'lucide-react'
+import { getBrandStats, getModelStats, type BrandData } from '../services/api'
 
 interface ModelData {
   name: string
@@ -13,38 +14,51 @@ interface ModelData {
   change: number
 }
 
-interface BrandModels {
-  [key: string]: ModelData[]
-}
-
-const mockBrandData: BrandModels = {
-  'Toyota': [
-    { name: 'Corolla', count: 1245, avgPrice: 18500, trend: [890, 920, 1050, 1180, 1245], change: 8 },
-    { name: 'RAV4', count: 987, avgPrice: 28900, trend: [750, 820, 890, 950, 987], change: 12 },
-    { name: 'Camry', count: 654, avgPrice: 22300, trend: [680, 665, 620, 640, 654], change: -4 },
-    { name: 'Highlander', count: 432, avgPrice: 35600, trend: [380, 395, 410, 425, 432], change: 6 },
-    { name: 'Yaris', count: 398, avgPrice: 15200, trend: [420, 410, 405, 400, 398], change: -2 },
-  ],
-  'Mazda': [
-    { name: 'CX-5', count: 876, avgPrice: 26400, trend: [720, 780, 820, 850, 876], change: 15 },
-    { name: 'Mazda3', count: 654, avgPrice: 19800, trend: [600, 620, 640, 650, 654], change: 3 },
-    { name: 'CX-3', count: 432, avgPrice: 18900, trend: [380, 390, 410, 420, 432], change: 7 },
-    { name: 'Mazda6', count: 298, avgPrice: 24500, trend: [320, 315, 310, 305, 298], change: -8 },
-  ],
-  'Honda': [
-    { name: 'CR-V', count: 743, avgPrice: 27200, trend: [680, 700, 720, 735, 743], change: 4 },
-    { name: 'Civic', count: 567, avgPrice: 20400, trend: [590, 580, 575, 570, 567], change: -2 },
-    { name: 'Jazz', count: 345, avgPrice: 16800, trend: [360, 355, 350, 348, 345], change: -1 },
-    { name: 'Accord', count: 234, avgPrice: 28900, trend: [250, 245, 240, 237, 234], change: -5 },
-  ]
-}
-
 export function BrandExplorer() {
+  const [brands, setBrands] = useState<BrandData[]>([])
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
+  const [models, setModels] = useState<ModelData[]>([])
   const [selectedModel, setSelectedModel] = useState<string | null>(null)
-  
-  const brands = Object.keys(mockBrandData)
-  const models = selectedBrand ? mockBrandData[selectedBrand] : []
+  const [loading, setLoading] = useState(true)
+  const [loadingModels, setLoadingModels] = useState(false)
+
+  // 加载品牌列表
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        setLoading(true)
+        const data = await getBrandStats()
+        setBrands(data.brands)
+      } catch (error) {
+        console.error('获取品牌列表失败:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchBrands()
+  }, [])
+
+  // 加载车型数据
+  useEffect(() => {
+    if (!selectedBrand) {
+      setModels([])
+      return
+    }
+
+    const fetchModels = async () => {
+      try {
+        setLoadingModels(true)
+        const data = await getModelStats(selectedBrand)
+        setModels(data)
+      } catch (error) {
+        console.error('获取车型数据失败:', error)
+        setModels([])
+      } finally {
+        setLoadingModels(false)
+      }
+    }
+    fetchModels()
+  }, [selectedBrand])
   
   return (
     <Card className="bg-slate-900/50 border-cyan-500/30 backdrop-blur-sm">
@@ -54,18 +68,26 @@ export function BrandExplorer() {
           <p className="text-slate-400 font-mono text-sm">Deep scan vehicle model analysis</p>
         </div>
         
-        {!selectedBrand ? (
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+            <p className="text-slate-400 font-mono text-sm mt-2">加载品牌数据...</p>
+          </div>
+        ) : !selectedBrand ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             {brands.map((brand) => (
               <Button
-                key={brand}
-                onClick={() => setSelectedBrand(brand)}
+                key={brand.name}
+                onClick={() => setSelectedBrand(brand.name)}
                 variant="outline"
                 className="h-16 bg-slate-800/50 border-cyan-500/30 hover:border-cyan-400 hover:bg-slate-800 text-cyan-300 font-mono uppercase tracking-wide"
               >
-                <div className="flex items-center space-x-2">
-                  <span>{brand}</span>
-                  <ChevronRight className="w-4 h-4" />
+                <div className="flex items-center justify-between w-full">
+                  <span>{brand.name}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-slate-400">{brand.count}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
                 </div>
               </Button>
             ))}
@@ -82,9 +104,19 @@ export function BrandExplorer() {
               </Button>
               <h3 className="text-cyan-300 font-mono uppercase tracking-wider text-xl">{selectedBrand} Models</h3>
             </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {models.map((model) => (
+
+            {loadingModels ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+                <p className="text-slate-400 font-mono text-sm mt-2">加载车型数据...</p>
+              </div>
+            ) : models.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-slate-400 font-mono">暂无车型数据</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {models.map((model) => (
                 <div
                   key={model.name}
                   onClick={() => setSelectedModel(selectedModel === model.name ? null : model.name)}
@@ -137,8 +169,9 @@ export function BrandExplorer() {
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

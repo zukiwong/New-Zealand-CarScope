@@ -1,14 +1,9 @@
+import { useEffect, useState } from 'react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { TrendingUp, Zap, Target } from 'lucide-react'
-
-const trendingModels = [
-  { name: 'Mazda CX-5', growth: 24, listings: 876 },
-  { name: 'Ford Ranger', growth: 19, listings: 654 },
-  { name: 'Toyota RAV4', growth: 15, listings: 987 },
-  { name: 'Honda CR-V', growth: 12, listings: 743 },
-]
+import { getBrandStats, type BrandData } from '../services/api'
 
 const fuelTypeData = [
   { name: 'Petrol', value: 65, color: '#06b6d4' },
@@ -26,35 +21,62 @@ const priceRangeData = [
 ]
 
 export function InsightsPanel() {
+  const [topBrands, setTopBrands] = useState<BrandData[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getBrandStats()
+        // 按增长率排序，取前4个增长最快的品牌
+        const trending = [...data.brands]
+          .sort((a, b) => b.change - a.change)
+          .slice(0, 4)
+        setTopBrands(trending)
+      } catch (error) {
+        console.error('获取洞察数据失败:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
   return (
     <div className="space-y-6">
-      {/* Trending Models */}
+      {/* Trending Brands */}
       <Card className="bg-slate-900/50 border-amber-500/30 backdrop-blur-sm">
         <div className="p-6 space-y-4">
           <div className="flex items-center space-x-2">
             <Zap className="w-5 h-5 text-amber-400" />
-            <h3 className="text-amber-400 font-mono uppercase tracking-wider">Fastest Growing Models</h3>
+            <h3 className="text-amber-400 font-mono uppercase tracking-wider">Fastest Growing Brands</h3>
           </div>
-          
-          <div className="space-y-3">
-            {trendingModels.map((model, index) => (
-              <div key={model.name} className="flex items-center justify-between bg-slate-800/50 rounded-lg p-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-6 h-6 bg-amber-500/20 border border-amber-500/30 rounded text-amber-400 text-xs font-mono flex items-center justify-center">
-                    {index + 1}
+
+          {loading ? (
+            <div className="text-center py-4">
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-amber-400"></div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {topBrands.map((brand, index) => (
+                <div key={brand.name} className="flex items-center justify-between bg-slate-800/50 rounded-lg p-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-amber-500/20 border border-amber-500/30 rounded text-amber-400 text-xs font-mono flex items-center justify-center">
+                      {index + 1}
+                    </div>
+                    <span className="text-cyan-300 font-mono">{brand.name}</span>
                   </div>
-                  <span className="text-cyan-300 font-mono">{model.name}</span>
+                  <div className="flex items-center space-x-4">
+                    <span className="text-slate-400 font-mono text-sm">{brand.count} listings</span>
+                    <Badge className={brand.change >= 0 ? "bg-green-500/20 text-green-400 border-green-500/30 font-mono" : "bg-red-500/20 text-red-400 border-red-500/30 font-mono"}>
+                      <TrendingUp className="w-3 h-3 mr-1" />
+                      {brand.change >= 0 ? '+' : ''}{brand.change}%
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <span className="text-slate-400 font-mono text-sm">{model.listings} listings</span>
-                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30 font-mono">
-                    <TrendingUp className="w-3 h-3 mr-1" />
-                    +{model.growth}%
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </Card>
 
