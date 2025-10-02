@@ -49,10 +49,9 @@ class TradeMeService {
           this.oauth.authorize(requestData)
         )
 
-        requestConfig.headers = {
-          ...requestConfig.headers,
-          ...authHeader,
-        }
+        // 合并 OAuth 头部到请求配置
+        requestConfig.headers = requestConfig.headers || {}
+        Object.assign(requestConfig.headers, authHeader)
 
         logger.debug(`Trade Me API 请求: ${requestConfig.method?.toUpperCase()} ${requestConfig.url}`)
         return requestConfig
