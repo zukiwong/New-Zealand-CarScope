@@ -159,6 +159,18 @@ class MarketService {
   }
 
   /**
+   * 获取市场洞察数据
+   */
+  async getMarketInsights() {
+    try {
+      return await tradeMeService.getMarketInsights()
+    } catch (error) {
+      logger.error('获取市场洞察失败:', error)
+      throw new Error('Failed to get market insights')
+    }
+  }
+
+  /**
    * 生成模拟趋势数据
    * TODO: 实现真实的历史数据跟踪
    */

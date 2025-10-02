@@ -150,6 +150,69 @@ class TradeMeService {
       throw new Error('Failed to get recent listings')
     }
   }
+
+  /**
+   * 获取市场洞察数据（燃料类型、价格范围等统计）
+   */
+  async getMarketInsights() {
+    try {
+      // 获取大量列表用于统计分析
+      const response = await this.searchMotors({
+        rows: 500, // 获取500条数据进行统计
+        page: 1,
+      })
+
+      const listings = response.List || []
+
+      // 统计燃料类型
+      const fuelTypeMap = new Map<string, number>()
+      // 统计价格范围
+      const priceRanges = {
+        '0-10k': 0,
+        '10-20k': 0,
+        '20-30k': 0,
+        '30-40k': 0,
+        '40k+': 0,
+      }
+
+      listings.forEach((listing) => {
+        // 燃料类型统计
+        const fuelType = listing.FuelType || 'Unknown'
+        fuelTypeMap.set(fuelType, (fuelTypeMap.get(fuelType) || 0) + 1)
+
+        // 价格范围统计
+        const price = listing.StartPrice || 0
+        if (price < 10000) priceRanges['0-10k']++
+        else if (price < 20000) priceRanges['10-20k']++
+        else if (price < 30000) priceRanges['20-30k']++
+        else if (price < 40000) priceRanges['30-40k']++
+        else priceRanges['40k+']++
+      })
+
+      // 转换为百分比
+      const total = listings.length
+      const fuelTypeData = Array.from(fuelTypeMap.entries()).map(([name, count]) => ({
+        name,
+        value: Math.round((count / total) * 100),
+        count,
+      }))
+
+      const priceRangeData = Object.entries(priceRanges).map(([range, count]) => ({
+        range,
+        count,
+        percentage: Math.round((count / total) * 100),
+      }))
+
+      return {
+        fuelTypes: fuelTypeData,
+        priceRanges: priceRangeData,
+        totalAnalyzed: total,
+      }
+    } catch (error) {
+      logger.error('获取市场洞察失败:', error)
+      throw new Error('Failed to get market insights')
+    }
+  }
 }
 
 export const tradeMeService = new TradeMeService()

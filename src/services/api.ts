@@ -104,3 +104,16 @@ export async function searchMotors(params: Record<string, any>) {
 export async function getListingDetails(id: number) {
   return apiRequest(`/api/listings/${id}`)
 }
+
+/**
+ * 获取市场洞察数据（燃料类型、价格范围统计）
+ */
+export interface MarketInsightsResponse {
+  fuelTypes: Array<{ name: string; value: number; count: number }>
+  priceRanges: Array<{ range: string; count: number; percentage: number }>
+  totalAnalyzed: number
+}
+
+export async function getMarketInsights(): Promise<MarketInsightsResponse> {
+  return apiRequest<MarketInsightsResponse>('/api/market/insights')
+}

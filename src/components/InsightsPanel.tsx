@@ -3,26 +3,23 @@ import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { TrendingUp, Zap, Target } from 'lucide-react'
-import { getBrandStats, type BrandData } from '../services/api'
+import { getBrandStats, getMarketInsights, type BrandData } from '../services/api'
 
-const fuelTypeData = [
-  { name: 'Petrol', value: 65, color: '#06b6d4' },
-  { name: 'Diesel', value: 20, color: '#10b981' },
-  { name: 'Hybrid', value: 12, color: '#f59e0b' },
-  { name: 'Electric', value: 3, color: '#8b5cf6' },
-]
-
-const priceRangeData = [
-  { range: '0-10k', count: 1234 },
-  { range: '10-20k', count: 2876 },
-  { range: '20-30k', count: 3421 },
-  { range: '30-40k', count: 1987 },
-  { range: '40k+', count: 1654 },
-]
+// 燃料类型颜色映射
+const fuelColorMap: Record<string, string> = {
+  'Petrol': '#06b6d4',
+  'Diesel': '#10b981',
+  'Hybrid': '#f59e0b',
+  'Electric': '#8b5cf6',
+  'Unknown': '#6b7280',
+}
 
 export function InsightsPanel() {
   const [topBrands, setTopBrands] = useState<BrandData[]>([])
+  const [fuelTypeData, setFuelTypeData] = useState<Array<{ name: string; value: number; color: string }>>([])
+  const [priceRangeData, setPriceRangeData] = useState<Array<{ range: string; count: number }>>([])
   const [loading, setLoading] = useState(true)
+  const [insightsLoading, setInsightsLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,6 +37,30 @@ export function InsightsPanel() {
       }
     }
     fetchData()
+  }, [])
+
+  useEffect(() => {
+    const fetchInsights = async () => {
+      try {
+        const data = await getMarketInsights()
+
+        // 转换燃料类型数据
+        const fuelData = data.fuelTypes.map(item => ({
+          name: item.name,
+          value: item.value,
+          color: fuelColorMap[item.name] || '#6b7280',
+        }))
+        setFuelTypeData(fuelData)
+
+        // 设置价格范围数据
+        setPriceRangeData(data.priceRanges)
+      } catch (error) {
+        console.error('获取市场统计失败:', error)
+      } finally {
+        setInsightsLoading(false)
+      }
+    }
+    fetchInsights()
   }, [])
 
   return (
@@ -87,42 +108,52 @@ export function InsightsPanel() {
             <Target className="w-5 h-5 text-purple-400" />
             <h3 className="text-purple-400 font-mono uppercase tracking-wider">Fuel Type Analysis</h3>
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={fuelTypeData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={80}
-                    dataKey="value"
-                  >
-                    {fuelTypeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+
+          {insightsLoading ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-purple-400"></div>
             </div>
-            
-            <div className="space-y-3">
-              {fuelTypeData.map((fuel) => (
-                <div key={fuel.name} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: fuel.color }}
-                    />
-                    <span className="text-slate-300 font-mono">{fuel.name}</span>
+          ) : fuelTypeData.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-slate-400 font-mono text-sm">暂无数据</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={fuelTypeData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={80}
+                      dataKey="value"
+                    >
+                      {fuelTypeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="space-y-3">
+                {fuelTypeData.map((fuel) => (
+                  <div key={fuel.name} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: fuel.color }}
+                      />
+                      <span className="text-slate-300 font-mono">{fuel.name}</span>
+                    </div>
+                    <span className="text-cyan-400 font-mono">{fuel.value}%</span>
                   </div>
-                  <span className="text-cyan-400 font-mono">{fuel.value}%</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </Card>
 
@@ -130,29 +161,41 @@ export function InsightsPanel() {
       <Card className="bg-slate-900/50 border-blue-500/30 backdrop-blur-sm">
         <div className="p-6 space-y-4">
           <h3 className="text-blue-400 font-mono uppercase tracking-wider">Price Range Distribution</h3>
-          
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={priceRangeData}>
-                <XAxis 
-                  dataKey="range" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 12, fontFamily: 'monospace' }}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 12, fontFamily: 'monospace' }}
-                />
-                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          
-          <div className="text-slate-400 font-mono text-sm">
-            <span className="text-blue-400">ANALYSIS:</span> Sweet spot at $20-30k range with highest inventory
-          </div>
+
+          {insightsLoading ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400"></div>
+            </div>
+          ) : priceRangeData.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-slate-400 font-mono text-sm">暂无数据</p>
+            </div>
+          ) : (
+            <>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={priceRangeData}>
+                    <XAxis
+                      dataKey="range"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#94a3b8', fontSize: 12, fontFamily: 'monospace' }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#94a3b8', fontSize: 12, fontFamily: 'monospace' }}
+                    />
+                    <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="text-slate-400 font-mono text-sm">
+                <span className="text-blue-400">ANALYSIS:</span> Based on {priceRangeData.reduce((sum, item) => sum + item.count, 0)} analyzed listings
+              </div>
+            </>
+          )}
         </div>
       </Card>
     </div>

@@ -18,4 +18,7 @@ router.get('/brands/:make/models', marketController.getModelStats.bind(marketCon
 // GET /api/market/regions - 获取区域统计
 router.get('/regions', marketController.getRegionStats.bind(marketController))
 
+// GET /api/market/insights - 获取市场洞察数据
+router.get('/insights', marketController.getInsights.bind(marketController))
+
 export default router

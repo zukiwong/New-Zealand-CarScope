@@ -115,6 +115,29 @@ class MarketController {
       next(error)
     }
   }
+
+  /**
+   * 获取市场洞察数据
+   */
+  async getInsights(req: Request, res: Response<ApiResponse>, next: NextFunction) {
+    try {
+      const cacheKey = 'market:insights'
+
+      const data = await getOrSet(
+        cacheKey,
+        () => marketService.getMarketInsights(),
+        600 // 10分钟缓存
+      )
+
+      res.json({
+        success: true,
+        data,
+        timestamp: new Date().toISOString(),
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
 }
 
 export const marketController = new MarketController()
