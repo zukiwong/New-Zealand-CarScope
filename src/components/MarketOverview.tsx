@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import { getBrandStats } from '../services/api'
 
 interface BrandData {
   name: string
@@ -9,41 +10,29 @@ interface BrandData {
   change: number
 }
 
-interface RegionData {
-  [key: string]: BrandData[]
-}
-
-const mockRegionData: RegionData = {
-  'Auckland': [
-    { name: 'Toyota', count: 4521, change: 12 },
-    { name: 'Mazda', count: 2834, change: 8 },
-    { name: 'Honda', count: 2156, change: -3 },
-    { name: 'Nissan', count: 1987, change: 15 },
-    { name: 'Ford', count: 1654, change: 2 },
-    { name: 'Holden', count: 1432, change: -8 },
-  ],
-  'Canterbury': [
-    { name: 'Toyota', count: 2834, change: 18 },
-    { name: 'Ford', count: 1987, change: 22 },
-    { name: 'Mazda', count: 1654, change: 5 },
-    { name: 'Holden', count: 1432, change: -12 },
-    { name: 'Nissan', count: 1287, change: 3 },
-    { name: 'Honda', count: 1098, change: -1 },
-  ],
-  'Waikato': [
-    { name: 'Toyota', count: 1876, change: 14 },
-    { name: 'Ford', count: 1543, change: 28 },
-    { name: 'Mazda', count: 1234, change: 7 },
-    { name: 'Nissan', count: 987, change: 9 },
-    { name: 'Honda', count: 854, change: -2 },
-    { name: 'Holden', count: 743, change: -15 },
-  ]
-}
-
 export function MarketOverview() {
-  const [selectedRegion, setSelectedRegion] = useState('Auckland')
-  
-  const currentData = mockRegionData[selectedRegion]
+  const [selectedRegion, setSelectedRegion] = useState('all')
+  const [currentData, setCurrentData] = useState<BrandData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await getBrandStats(selectedRegion === 'all' ? undefined : selectedRegion)
+        setCurrentData(data.brands || [])
+      } catch (err) {
+        console.error('获取市场数据失败:', err)
+        setError('无法加载市场数据')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [selectedRegion])
   
   return (
     <Card className="bg-slate-900/50 border-cyan-500/30 backdrop-blur-sm">
@@ -58,15 +47,38 @@ export function MarketOverview() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-slate-800 border-cyan-500/30">
+              <SelectItem value="all" className="text-cyan-300 font-mono">All Regions</SelectItem>
               <SelectItem value="Auckland" className="text-cyan-300 font-mono">Auckland</SelectItem>
               <SelectItem value="Canterbury" className="text-cyan-300 font-mono">Canterbury</SelectItem>
               <SelectItem value="Waikato" className="text-cyan-300 font-mono">Waikato</SelectItem>
+              <SelectItem value="Wellington" className="text-cyan-300 font-mono">Wellington</SelectItem>
+              <SelectItem value="Bay of Plenty" className="text-cyan-300 font-mono">Bay of Plenty</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          {currentData.map((brand) => (
+        {loading && (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+            <p className="text-slate-400 font-mono text-sm mt-2">加载市场数据...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-8">
+            <p className="text-red-400 font-mono">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && currentData.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-slate-400 font-mono">暂无数据</p>
+          </div>
+        )}
+
+        {!loading && !error && currentData.length > 0 && (
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            {currentData.map((brand) => (
             <div
               key={brand.name} 
               className="bg-slate-800/50 border border-cyan-500/20 rounded-lg p-4 hover:border-cyan-400/50 transition-all duration-300 hover:bg-slate-800/80"
@@ -95,8 +107,9 @@ export function MarketOverview() {
                 />
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
         
         <div className="border-t border-cyan-500/20 pt-4">
           <div className="text-slate-400 font-mono text-sm">
