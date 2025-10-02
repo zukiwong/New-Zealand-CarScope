@@ -10,10 +10,9 @@ export const config = {
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
 
-  // Trade Me API 配置
+  // Trade Me API 配置 (只需要 Consumer Key/Secret)
   trademe: {
     apiBaseUrl: process.env.TRADEME_API_BASE_URL || 'https://api.trademe.co.nz/v1',
-    oauthToken: process.env.TRADEME_OAUTH_TOKEN || '',
     consumerKey: process.env.TRADEME_CONSUMER_KEY || '',
     consumerSecret: process.env.TRADEME_CONSUMER_SECRET || '',
   },
@@ -45,7 +44,7 @@ export const config = {
 
 // 验证必需的环境变量
 export function validateConfig() {
-  const required = ['TRADEME_OAUTH_TOKEN']
+  const required = ['TRADEME_CONSUMER_KEY', 'TRADEME_CONSUMER_SECRET']
   const missing = required.filter(key => !process.env[key])
 
   if (missing.length > 0) {

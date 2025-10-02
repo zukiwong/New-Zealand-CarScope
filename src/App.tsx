@@ -34,10 +34,10 @@ export default function App() {
                 </div>
                 <div>
                   <h1 className="text-3xl text-cyan-400 font-mono uppercase tracking-wider">
-                    NZ CarScope
+                    New Zealand CarScope
                   </h1>
                   <p className="text-slate-400 font-mono text-sm">
-                    New Zealand Used Car Data Explorer • Trade Me API Integration
+                    NZ Used Car Data Explorer • Trade Me API Integration
                   </p>
                 </div>
               </div>
@@ -151,7 +151,7 @@ export default function App() {
         <Card className="bg-slate-900/50 border-slate-600/30 backdrop-blur-sm">
           <div className="p-4">
             <div className="flex items-center justify-between text-slate-500 font-mono text-xs">
-              <span>© 2024 NZ CarScope • Experimental Data Explorer</span>
+              <span>© 2025 NZ CarScope • Experimental Data Explorer</span>
               <span>Powered by Trade Me Motors API • Real-time Market Intelligence</span>
             </div>
           </div>

@@ -1,7 +1,10 @@
 /**
  * Trade Me API 服务
+ * 使用 OAuth 1.0a (Consumer Key/Secret) 进行签名认证
  */
 import axios, { AxiosInstance } from 'axios'
+import OAuth from 'oauth-1.0a'
+import crypto from 'crypto-js'
 import { config } from '../config/index.js'
 import { logger } from '../utils/logger.js'
 import type {
@@ -12,22 +15,47 @@ import type {
 
 class TradeMeService {
   private client: AxiosInstance
+  private oauth: OAuth
 
   constructor() {
+    // 初始化 OAuth 1.0a
+    this.oauth = new OAuth({
+      consumer: {
+        key: config.trademe.consumerKey,
+        secret: config.trademe.consumerSecret,
+      },
+      signature_method: 'HMAC-SHA1',
+      hash_function(baseString, key) {
+        return crypto.HmacSHA1(baseString, key).toString(crypto.enc.Base64)
+      },
+    })
+
+    // 初始化 Axios 客户端
     this.client = axios.create({
       baseURL: config.trademe.apiBaseUrl,
-      headers: {
-        Authorization: `OAuth oauth_token="${config.trademe.oauthToken}"`,
-        'Content-Type': 'application/json',
-      },
       timeout: 10000,
     })
 
-    // 请求拦截器
+    // 请求拦截器 - 添加 OAuth 签名
     this.client.interceptors.request.use(
-      (config) => {
-        logger.debug(`Trade Me API 请求: ${config.method?.toUpperCase()} ${config.url}`)
-        return config
+      (requestConfig) => {
+        const requestData = {
+          url: `${config.trademe.apiBaseUrl}${requestConfig.url}`,
+          method: requestConfig.method?.toUpperCase() || 'GET',
+        }
+
+        // 生成 OAuth 签名头
+        const authHeader = this.oauth.toHeader(
+          this.oauth.authorize(requestData)
+        )
+
+        requestConfig.headers = {
+          ...requestConfig.headers,
+          ...authHeader,
+        }
+
+        logger.debug(`Trade Me API 请求: ${requestConfig.method?.toUpperCase()} ${requestConfig.url}`)
+        return requestConfig
       },
       (error) => {
         logger.error('Trade Me API 请求错误:', error)
@@ -43,6 +71,9 @@ class TradeMeService {
       },
       (error) => {
         logger.error('Trade Me API 响应错误:', error.message)
+        if (error.response) {
+          logger.error('响应数据:', error.response.data)
+        }
         return Promise.reject(error)
       }
     )
@@ -67,7 +98,7 @@ class TradeMeService {
       if (params.rows) queryParams.append('rows', params.rows.toString())
 
       const response = await this.client.get<TradeMeSearchResponse>(
-        `/Search/Motors.json?${queryParams}`
+        `/Search/Motors/Used.json?${queryParams}`
       )
 
       return response.data
