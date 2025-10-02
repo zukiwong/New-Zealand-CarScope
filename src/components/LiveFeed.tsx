@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { Clock, MapPin, Fuel, Settings } from 'lucide-react'
+import { getRecentListings, type MotorListing } from '../services/api'
 
 interface LiveListing {
   id: string
@@ -16,86 +17,81 @@ interface LiveListing {
   timeAdded: string
 }
 
-const mockListings: LiveListing[] = [
-  {
-    id: '1',
-    make: 'Toyota',
-    model: 'Corolla',
-    year: 2018,
-    price: 15800,
-    region: 'Auckland',
-    odometer: 85000,
-    fuelType: 'Petrol',
-    transmission: 'Manual',
-    timeAdded: '2 min ago'
-  },
-  {
-    id: '2',
-    make: 'Mazda',
-    model: 'CX-5',
-    year: 2020,
-    price: 28900,
-    region: 'Canterbury',
-    odometer: 45000,
-    fuelType: 'Petrol',
-    transmission: 'Automatic',
-    timeAdded: '5 min ago'
-  },
-  {
-    id: '3',
-    make: 'Honda',
-    model: 'CR-V',
-    year: 2019,
-    price: 26500,
-    region: 'Wellington',
-    odometer: 62000,
-    fuelType: 'Hybrid',
-    transmission: 'CVT',
-    timeAdded: '8 min ago'
-  },
-  {
-    id: '4',
-    make: 'Ford',
-    model: 'Ranger',
-    year: 2021,
-    price: 45900,
-    region: 'Waikato',
-    odometer: 28000,
-    fuelType: 'Diesel',
-    transmission: 'Automatic',
-    timeAdded: '12 min ago'
-  },
-  {
-    id: '5',
-    make: 'Nissan',
-    model: 'X-Trail',
-    year: 2017,
-    price: 19800,
-    region: 'Auckland',
-    odometer: 98000,
-    fuelType: 'Petrol',
-    transmission: 'CVT',
-    timeAdded: '15 min ago'
-  }
-]
-
 export function LiveFeed() {
+  const [listings, setListings] = useState<LiveListing[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
-  
+  const [loading, setLoading] = useState(true)
+
   useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        const data = await getRecentListings(10)
+        // 转换 API 数据格式
+        const formattedListings: LiveListing[] = data.map((item: MotorListing) => ({
+          id: item.ListingId?.toString() || '',
+          make: item.Make || 'Unknown',
+          model: item.Model || 'Unknown',
+          year: item.Year || 0,
+          price: item.PriceDisplay ? parseFloat(item.PriceDisplay.replace(/[^0-9.]/g, '')) : 0,
+          region: item.Region || 'Unknown',
+          odometer: item.Odometer || 0,
+          fuelType: item.FuelType || 'Unknown',
+          transmission: item.Transmission || 'Unknown',
+          timeAdded: item.StartDate ? calculateTimeAgo(new Date(item.StartDate)) : 'Recently'
+        }))
+        setListings(formattedListings)
+      } catch (error) {
+        console.error('获取实时列表失败:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchListings()
+    // 每30秒刷新一次数据
+    const refreshInterval = setInterval(fetchListings, 30000)
+    return () => clearInterval(refreshInterval)
+  }, [])
+
+  useEffect(() => {
+    if (listings.length === 0) return
+
     const interval = setInterval(() => {
       setIsAnimating(true)
       setTimeout(() => {
-        setCurrentIndex((prev) => (prev + 1) % mockListings.length)
+        setCurrentIndex((prev) => (prev + 1) % listings.length)
         setIsAnimating(false)
       }, 300)
     }, 4000)
-    
+
     return () => clearInterval(interval)
-  }, [])
-  
-  const currentListing = mockListings[currentIndex]
+  }, [listings.length])
+
+  function calculateTimeAgo(date: Date): string {
+    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000)
+    if (seconds < 60) return `${seconds} sec ago`
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `${minutes} min ago`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours} hr ago`
+    return `${Math.floor(hours / 24)} day ago`
+  }
+
+  if (loading || listings.length === 0) {
+    return (
+      <Card className="bg-slate-900/50 border-green-500/30 backdrop-blur-sm">
+        <div className="p-6">
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-400"></div>
+            <p className="text-slate-400 font-mono text-sm mt-2">加载实时数据...</p>
+          </div>
+        </div>
+      </Card>
+    )
+  }
+
+  const currentListing = listings[currentIndex]
   
   return (
     <Card className="bg-slate-900/50 border-green-500/30 backdrop-blur-sm">
@@ -152,7 +148,7 @@ export function LiveFeed() {
           <div className="border-t border-green-500/20 pt-4">
             <div className="flex justify-between items-center">
               <div className="flex space-x-1">
-                {mockListings.map((_, index) => (
+                {listings.map((_, index) => (
                   <div
                     key={index}
                     className={`w-2 h-2 rounded-full transition-colors duration-300 ${
@@ -162,7 +158,7 @@ export function LiveFeed() {
                 ))}
               </div>
               <div className="text-slate-400 font-mono text-xs">
-                <span className="text-green-400">FEED STATUS:</span> {mockListings.length} new listings detected
+                <span className="text-green-400">FEED STATUS:</span> {listings.length} new listings detected
               </div>
             </div>
           </div>

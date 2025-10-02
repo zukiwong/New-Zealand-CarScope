@@ -5,6 +5,42 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
+// 响应类型定义
+interface ApiResponse<T> {
+  success: boolean
+  data: T
+  message?: string
+}
+
+// 品牌数据类型
+export interface BrandData {
+  name: string
+  count: number
+  change: number
+}
+
+export interface BrandStatsResponse {
+  brands: BrandData[]
+  totalListings: number
+  region?: string
+}
+
+// 车辆列表类型
+export interface MotorListing {
+  ListingId: number
+  Title: string
+  Make: string
+  Model: string
+  Year: number
+  PriceDisplay: string
+  Region: string
+  Odometer: number
+  FuelType: string
+  Transmission: string
+  StartDate: string
+  PictureHref?: string
+}
+
 /**
  * 通用API请求函数
  */
@@ -21,8 +57,8 @@ async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T
     throw new Error(`API请求失败: ${response.status}`)
   }
 
-  const data = await response.json()
-  return data.data // 后端返回格式: { success: true, data: {...} }
+  const result = (await response.json()) as ApiResponse<T>
+  return result.data
 }
 
 /**
@@ -35,23 +71,23 @@ export async function getMarketOverview() {
 /**
  * 获取品牌统计
  */
-export async function getBrandStats(region?: string) {
+export async function getBrandStats(region?: string): Promise<BrandStatsResponse> {
   const query = region ? `?region=${region}` : ''
-  return apiRequest(`/api/market/brands${query}`)
+  return apiRequest<BrandStatsResponse>(`/api/market/brands${query}`)
 }
 
 /**
  * 获取车型统计
  */
-export async function getModelStats(make: string) {
-  return apiRequest(`/api/market/brands/${make}/models`)
+export async function getModelStats(make: string): Promise<any> {
+  return apiRequest<any>(`/api/market/brands/${make}/models`)
 }
 
 /**
  * 获取最新列表
  */
-export async function getRecentListings(count: number = 10) {
-  return apiRequest(`/api/listings/recent?count=${count}`)
+export async function getRecentListings(count: number = 10): Promise<MotorListing[]> {
+  return apiRequest<MotorListing[]>(`/api/listings/recent?count=${count}`)
 }
 
 /**

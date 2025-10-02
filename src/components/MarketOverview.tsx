@@ -2,13 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { getBrandStats } from '../services/api'
-
-interface BrandData {
-  name: string
-  count: number
-  change: number
-}
+import { getBrandStats, type BrandData } from '../services/api'
 
 export function MarketOverview() {
   const [selectedRegion, setSelectedRegion] = useState('all')

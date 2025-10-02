@@ -37,15 +37,22 @@ class MarketController {
       const { region } = req.query
       const cacheKey = `brands:stats:${region || 'all'}`
 
-      const data = await getOrSet(
+      const brands = await getOrSet(
         cacheKey,
         () => marketService.getBrandStats(region as string),
         300
       )
 
+      // 计算总列表数
+      const totalListings = brands.reduce((sum: number, brand: any) => sum + brand.count, 0)
+
       res.json({
         success: true,
-        data,
+        data: {
+          brands,
+          totalListings,
+          region: region as string || 'all',
+        },
         timestamp: new Date().toISOString(),
       })
     } catch (error) {
