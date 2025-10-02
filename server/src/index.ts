@@ -23,6 +23,9 @@ try {
 // 创建Express应用
 const app = express()
 
+// 信任代理（Railway/Vercel 等部署平台需要）
+app.set('trust proxy', 1)
+
 // 安全中间件
 app.use(helmet())
 

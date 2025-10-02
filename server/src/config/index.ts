@@ -10,9 +10,9 @@ export const config = {
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
 
-  // Trade Me API 配置 (只需要 Consumer Key/Secret)
+  // Trade Me API 配置 (Sandbox 测试环境)
   trademe: {
-    apiBaseUrl: process.env.TRADEME_API_BASE_URL || 'https://api.trademe.co.nz/v1',
+    apiBaseUrl: process.env.TRADEME_API_BASE_URL || 'https://api.tmsandbox.co.nz/v1',
     consumerKey: process.env.TRADEME_CONSUMER_KEY || '',
     consumerSecret: process.env.TRADEME_CONSUMER_SECRET || '',
   },
