@@ -10,9 +10,20 @@ import { Search, Activity, BarChart3, Radar, Zap } from 'lucide-react'
 
 export default function App() {
   const [isScanning, setIsScanning] = useState(false)
-  
-  const handleScanToggle = () => {
-    setIsScanning(!isScanning)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleScanToggle = async () => {
+    if (isScanning) return // 防止重复点击
+
+    setIsScanning(true)
+
+    // 触发所有组件刷新（通过改变 key）
+    setRefreshKey(prev => prev + 1)
+
+    // 模拟扫描过程，2秒后恢复
+    setTimeout(() => {
+      setIsScanning(false)
+    }, 2000)
   }
 
   return (
@@ -45,15 +56,16 @@ export default function App() {
               <div className="flex items-center space-x-4">
                 <Button
                   onClick={handleScanToggle}
+                  disabled={isScanning}
                   variant={isScanning ? "destructive" : "default"}
                   className={`font-mono uppercase tracking-wide ${
-                    isScanning 
-                      ? 'bg-red-600/80 hover:bg-red-600 border-red-500' 
+                    isScanning
+                      ? 'bg-red-600/80 hover:bg-red-600 border-red-500'
                       : 'bg-cyan-600/80 hover:bg-cyan-600 border-cyan-500'
                   }`}
                 >
-                  <Zap className="w-4 h-4 mr-2" />
-                  {isScanning ? 'Stop Scan' : 'Start Scan'}
+                  <Zap className={`w-4 h-4 mr-2 ${isScanning ? 'animate-pulse' : ''}`} />
+                  {isScanning ? 'Scanning...' : 'Start Scan'}
                 </Button>
                 <div className="flex items-center space-x-2 text-slate-400 font-mono text-sm">
                   <div className={`w-2 h-2 rounded-full ${isScanning ? 'bg-green-400 animate-pulse' : 'bg-slate-500'}`} />
@@ -93,21 +105,21 @@ export default function App() {
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div className="xl:col-span-2 space-y-6">
               <TabsContent value="overview" className="mt-0">
-                <MarketOverview />
+                <MarketOverview key={`overview-${refreshKey}`} />
               </TabsContent>
-              
+
               <TabsContent value="explorer" className="mt-0">
-                <BrandExplorer />
+                <BrandExplorer key={`explorer-${refreshKey}`} />
               </TabsContent>
-              
+
               <TabsContent value="insights" className="mt-0">
-                <InsightsPanel />
+                <InsightsPanel key={`insights-${refreshKey}`} />
               </TabsContent>
             </div>
-            
+
             {/* Side Panel */}
             <div className="space-y-6">
-              <LiveFeed />
+              <LiveFeed key={`livefeed-${refreshKey}`} />
               
               {/* System Status */}
               <Card className="bg-slate-900/50 border-slate-600/30 backdrop-blur-sm">
