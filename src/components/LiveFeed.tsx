@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { Clock, MapPin, Fuel, Settings } from 'lucide-react'
-import { getRecentListings, type MotorListing } from '../services/api'
+import { getRecentListings } from '../services/api'
 
 interface LiveListing {
   id: string

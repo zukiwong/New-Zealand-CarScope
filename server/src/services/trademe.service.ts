@@ -176,8 +176,8 @@ class TradeMeService {
       }
 
       listings.forEach((listing) => {
-        // 燃料类型统计
-        const fuelType = listing.FuelType || 'Unknown'
+        // 燃料类型统计 (注意: API返回的是 Fuel 字段,不是 FuelType)
+        const fuelType = listing.Fuel || 'Unknown'
         fuelTypeMap.set(fuelType, (fuelTypeMap.get(fuelType) || 0) + 1)
 
         // 价格范围统计
