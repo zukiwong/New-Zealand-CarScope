@@ -6,6 +6,10 @@ Real-time used car market insights powered by Trade Me Motors API
 
 https://new-zealand-car-scope.vercel.app
 
+## Screenshot
+
+![Main Interface](./screenshots/main.png)
+
 ## Features
 
 - **Market Overview** - Real-time brand statistics with regional filtering and pagination
