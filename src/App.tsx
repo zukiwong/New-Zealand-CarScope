@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { MarketOverview } from './components/MarketOverview'
 import { BrandExplorer } from './components/BrandExplorer'
 import { LiveFeed } from './components/LiveFeed'
@@ -157,6 +158,7 @@ export default function App() {
           </div>
         </Card>
       </div>
+      <Analytics />
     </div>
   )
 }

@@ -56,10 +56,6 @@ npm run dev
 
 Configure Trade Me API credentials in `.env` files.
 
-## License
 
-MIT
 
----
 
-Powered by Trade Me API
