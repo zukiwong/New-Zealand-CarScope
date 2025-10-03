@@ -31,18 +31,29 @@ export function LiveFeed({ isScanning }: LiveFeedProps) {
     try {
       const data = await getRecentListings(10)
       // 转换 API 数据格式
-      const formattedListings: LiveListing[] = data.map((item: MotorListing) => ({
-        id: item.ListingId?.toString() || '',
-        make: item.Make || 'Unknown',
-        model: item.Model || 'Unknown',
-        year: item.Year || 0,
-        price: item.PriceDisplay ? parseFloat(item.PriceDisplay.replace(/[^0-9.]/g, '')) : 0,
-        region: item.Region || 'Unknown',
-        odometer: item.Odometer || 0,
-        fuelType: item.FuelType || 'Unknown',
-        transmission: item.Transmission || 'Unknown',
-        timeAdded: item.StartDate ? calculateTimeAgo(new Date(item.StartDate)) : 'Recently'
-      }))
+      const formattedListings: LiveListing[] = data.map((item: any) => {
+        // 解析 Trade Me 特殊日期格式: /Date(1759381209310)/
+        let parsedDate = new Date()
+        if (item.StartDate) {
+          const match = item.StartDate.match(/\/Date\((\d+)\)\//)
+          if (match) {
+            parsedDate = new Date(parseInt(match[1]))
+          }
+        }
+
+        return {
+          id: item.ListingId?.toString() || '',
+          make: item.Make || 'Unknown',
+          model: item.Model || 'Unknown',
+          year: item.Year || 0,
+          price: item.PriceDisplay ? parseFloat(item.PriceDisplay.replace(/[^0-9.]/g, '')) : 0,
+          region: item.Region || 'Unknown',
+          odometer: item.Odometer || 0,
+          fuelType: item.Fuel || 'Unknown', // 注意: API返回的是 Fuel 不是 FuelType
+          transmission: item.Transmission || 'Unknown',
+          timeAdded: calculateTimeAgo(parsedDate)
+        }
+      })
       setListings(formattedListings)
     } catch (error) {
       console.error('获取实时列表失败:', error)
