@@ -56,12 +56,42 @@ export function LiveFeed({ isScanning }: LiveFeedProps) {
     fetchListings()
   }, [])
 
-  // 自动刷新（只在 isScanning 为 true 时）
+  // 自动刷新（只在 isScanning 为 true 时）- 优化版
   useEffect(() => {
     if (!isScanning) return
 
-    const refreshInterval = setInterval(fetchListings, 30000)
-    return () => clearInterval(refreshInterval)
+    let refreshInterval: NodeJS.Timeout | null = null
+    let isRefreshing = false // 节流标志
+
+    const refreshWithThrottle = async () => {
+      // 检查页面是否可见
+      if (document.hidden) return
+
+      // 请求节流 - 如果正在刷新,跳过本次
+      if (isRefreshing) return
+
+      isRefreshing = true
+      await fetchListings()
+      isRefreshing = false
+    }
+
+    // 页面可见性变化监听
+    const handleVisibilityChange = () => {
+      if (!document.hidden && isScanning) {
+        // 页面重新可见时,立即刷新一次
+        refreshWithThrottle()
+      }
+    }
+
+    // 60秒刷新一次
+    refreshInterval = setInterval(refreshWithThrottle, 60000)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      if (refreshInterval) clearInterval(refreshInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      isRefreshing = false
+    }
   }, [isScanning])
 
   useEffect(() => {
