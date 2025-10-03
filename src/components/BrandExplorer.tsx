@@ -71,7 +71,7 @@ export function BrandExplorer() {
         {loading ? (
           <div className="text-center py-8">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
-            <p className="text-slate-400 font-mono text-sm mt-2">加载品牌数据...</p>
+            <p className="text-slate-400 font-mono text-sm mt-2">Load brand data...</p>
           </div>
         ) : !selectedBrand ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">

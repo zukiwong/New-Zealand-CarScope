@@ -17,42 +17,52 @@ interface LiveListing {
   timeAdded: string
 }
 
-export function LiveFeed() {
+interface LiveFeedProps {
+  isScanning: boolean
+}
+
+export function LiveFeed({ isScanning }: LiveFeedProps) {
   const [listings, setListings] = useState<LiveListing[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        const data = await getRecentListings(10)
-        // 转换 API 数据格式
-        const formattedListings: LiveListing[] = data.map((item: MotorListing) => ({
-          id: item.ListingId?.toString() || '',
-          make: item.Make || 'Unknown',
-          model: item.Model || 'Unknown',
-          year: item.Year || 0,
-          price: item.PriceDisplay ? parseFloat(item.PriceDisplay.replace(/[^0-9.]/g, '')) : 0,
-          region: item.Region || 'Unknown',
-          odometer: item.Odometer || 0,
-          fuelType: item.FuelType || 'Unknown',
-          transmission: item.Transmission || 'Unknown',
-          timeAdded: item.StartDate ? calculateTimeAgo(new Date(item.StartDate)) : 'Recently'
-        }))
-        setListings(formattedListings)
-      } catch (error) {
-        console.error('获取实时列表失败:', error)
-      } finally {
-        setLoading(false)
-      }
+  const fetchListings = async () => {
+    try {
+      const data = await getRecentListings(10)
+      // 转换 API 数据格式
+      const formattedListings: LiveListing[] = data.map((item: MotorListing) => ({
+        id: item.ListingId?.toString() || '',
+        make: item.Make || 'Unknown',
+        model: item.Model || 'Unknown',
+        year: item.Year || 0,
+        price: item.PriceDisplay ? parseFloat(item.PriceDisplay.replace(/[^0-9.]/g, '')) : 0,
+        region: item.Region || 'Unknown',
+        odometer: item.Odometer || 0,
+        fuelType: item.FuelType || 'Unknown',
+        transmission: item.Transmission || 'Unknown',
+        timeAdded: item.StartDate ? calculateTimeAgo(new Date(item.StartDate)) : 'Recently'
+      }))
+      setListings(formattedListings)
+    } catch (error) {
+      console.error('获取实时列表失败:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  // 初始加载
+  useEffect(() => {
     fetchListings()
-    // 每30秒刷新一次数据
+  }, [])
+
+  // 自动刷新（只在 isScanning 为 true 时）
+  useEffect(() => {
+    if (!isScanning) return
+
     const refreshInterval = setInterval(fetchListings, 30000)
     return () => clearInterval(refreshInterval)
-  }, [])
+  }, [isScanning])
 
   useEffect(() => {
     if (listings.length === 0) return
@@ -84,7 +94,7 @@ export function LiveFeed() {
         <div className="p-6">
           <div className="text-center py-8">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-400"></div>
-            <p className="text-slate-400 font-mono text-sm mt-2">加载实时数据...</p>
+            <p className="text-slate-400 font-mono text-sm mt-2">Load real-time data...</p>
           </div>
         </div>
       </Card>
@@ -102,8 +112,10 @@ export function LiveFeed() {
             <p className="text-slate-400 font-mono text-sm">Real-time market additions</p>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-green-400 font-mono text-sm uppercase">Active</span>
+            <div className={`w-2 h-2 rounded-full ${isScanning ? 'bg-green-400 animate-pulse' : 'bg-slate-500'}`}></div>
+            <span className={`font-mono text-sm uppercase ${isScanning ? 'text-green-400' : 'text-slate-500'}`}>
+              {isScanning ? 'Active' : 'Paused'}
+            </span>
           </div>
         </div>
         

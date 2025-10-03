@@ -10,20 +10,9 @@ import { Search, Activity, BarChart3, Radar, Zap } from 'lucide-react'
 
 export default function App() {
   const [isScanning, setIsScanning] = useState(false)
-  const [refreshKey, setRefreshKey] = useState(0)
 
-  const handleScanToggle = async () => {
-    if (isScanning) return // 防止重复点击
-
-    setIsScanning(true)
-
-    // 触发所有组件刷新（通过改变 key）
-    setRefreshKey(prev => prev + 1)
-
-    // 模拟扫描过程，2秒后恢复
-    setTimeout(() => {
-      setIsScanning(false)
-    }, 2000)
+  const handleScanToggle = () => {
+    setIsScanning(!isScanning)
   }
 
   return (
@@ -56,7 +45,6 @@ export default function App() {
               <div className="flex items-center space-x-4">
                 <Button
                   onClick={handleScanToggle}
-                  disabled={isScanning}
                   variant={isScanning ? "destructive" : "default"}
                   className={`font-mono uppercase tracking-wide ${
                     isScanning
@@ -64,8 +52,8 @@ export default function App() {
                       : 'bg-cyan-600/80 hover:bg-cyan-600 border-cyan-500'
                   }`}
                 >
-                  <Zap className={`w-4 h-4 mr-2 ${isScanning ? 'animate-pulse' : ''}`} />
-                  {isScanning ? 'Scanning...' : 'Start Scan'}
+                  <Zap className="w-4 h-4 mr-2" />
+                  {isScanning ? 'Stop Scan' : 'Start Scan'}
                 </Button>
                 <div className="flex items-center space-x-2 text-slate-400 font-mono text-sm">
                   <div className={`w-2 h-2 rounded-full ${isScanning ? 'bg-green-400 animate-pulse' : 'bg-slate-500'}`} />
@@ -105,21 +93,21 @@ export default function App() {
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div className="xl:col-span-2 space-y-6">
               <TabsContent value="overview" className="mt-0">
-                <MarketOverview key={`overview-${refreshKey}`} />
+                <MarketOverview />
               </TabsContent>
 
               <TabsContent value="explorer" className="mt-0">
-                <BrandExplorer key={`explorer-${refreshKey}`} />
+                <BrandExplorer />
               </TabsContent>
 
               <TabsContent value="insights" className="mt-0">
-                <InsightsPanel key={`insights-${refreshKey}`} />
+                <InsightsPanel />
               </TabsContent>
             </div>
 
             {/* Side Panel */}
             <div className="space-y-6">
-              <LiveFeed key={`livefeed-${refreshKey}`} />
+              <LiveFeed isScanning={isScanning} />
               
               {/* System Status */}
               <Card className="bg-slate-900/50 border-slate-600/30 backdrop-blur-sm">
