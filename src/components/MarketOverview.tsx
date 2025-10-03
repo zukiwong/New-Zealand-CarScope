@@ -22,7 +22,7 @@ export function MarketOverview() {
         setCurrentPage(1) // 重置到第一页
       } catch (err) {
         console.error('获取市场数据失败:', err)
-        setError('无法加载市场数据')
+        setError('Failed to load market data')
       } finally {
         setLoading(false)
       }
@@ -104,7 +104,7 @@ export function MarketOverview() {
 
         {!loading && !error && currentData.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-slate-400 font-mono">暂无数据</p>
+            <p className="text-slate-400 font-mono">No data available</p>
           </div>
         )}
 

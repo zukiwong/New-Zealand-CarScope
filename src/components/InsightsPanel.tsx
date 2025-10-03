@@ -115,7 +115,7 @@ export function InsightsPanel() {
             </div>
           ) : fuelTypeData.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-slate-400 font-mono text-sm">暂无数据</p>
+              <p className="text-slate-400 font-mono text-sm">No data available</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -168,7 +168,7 @@ export function InsightsPanel() {
             </div>
           ) : priceRangeData.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-slate-400 font-mono text-sm">暂无数据</p>
+              <p className="text-slate-400 font-mono text-sm">No data available</p>
             </div>
           ) : (
             <>
