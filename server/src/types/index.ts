@@ -24,7 +24,7 @@ export interface TradeMeMotorListing extends TradeMeListingResponse {
   Year: number
   Odometer: number
   EngineSize: number
-  FuelType: string
+  Fuel: string // Trade Me API 返回的是 Fuel 字段，不是 FuelType
   Transmission: string
   BodyStyle: string
   Doors: number
